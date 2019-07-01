@@ -1,5 +1,5 @@
 # Trick or TReAT : Thematic Reinforcement for Artistic Typography
-This is an implementation of the ICCC '19 paper "Trick or TReAT : Thematic Reinforcement for Artistic Typography", by Purva Tendulkar, Kalpesh Krishna, Ramprasaath R. Selvaraju & Devi Parikh.
+This is the official repository accompanying the ICCC 2019 paper "Trick or TReAT : Thematic Reinforcement for Artistic Typography", by Purva Tendulkar, Kalpesh Krishna, Ramprasaath R. Selvaraju & Devi Parikh. The demo can be found [here](http://doodle.cloudcv.org/).
 
 Full text available at: https://arxiv.org/abs/1903.07820
 
