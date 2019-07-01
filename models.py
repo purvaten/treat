@@ -1,26 +1,19 @@
-"""Define dataset model classes and the learning model class of AlexNet-based encoder and ResNet-based decoder.
-"""
+"""Define dataset model classes and the learning model class of AlexNet-based encoder and ResNet-based decoder."""
 
 import numpy as np
 import torch
 from torch import nn
-import torchvision
 from torchvision import transforms
 from torch.utils.data import Dataset
 import scipy.ndimage as ndimage
 from scipy.misc import imresize
-import matplotlib.pyplot as plt
-from torch.autograd import Function, Variable
 import torch.nn.functional as F
-from torchvision import datasets, models
-import torch.optim as optim
-from torch.optim import lr_scheduler
+from string import ascii_lowercase
 
 import glob
 import math
 import re
 import cv2
-import sys
 import os
 
 from logger import get_logger
@@ -28,7 +21,7 @@ from logger import get_logger
 
 logger = get_logger(__name__)
 
-letters = ['lowera', 'lowerb', 'lowerc', 'lowerd', 'lowere', 'lowerf', 'lowerg', 'lowerh', 'loweri', 'lowerj', 'lowerk', 'lowerl', 'lowerm', 'lowern', 'lowero', 'lowerp', 'lowerq', 'lowerr', 'lowers', 'lowert', 'loweru', 'lowerv', 'lowerw', 'lowerx', 'lowery', 'lowerz', 'uppera', 'upperb', 'upperc', 'upperd', 'uppere', 'upperf', 'upperg', 'upperh', 'upperi', 'upperj', 'upperk', 'upperl', 'upperm', 'uppern', 'uppero', 'upperp', 'upperq', 'upperr', 'uppers', 'uppert', 'upperu', 'upperv', 'upperw', 'upperx', 'uppery', 'upperz']
+letters = ['lower' + a for a in ascii_lowercase]
 
 # ===================transforms & preprocessing=====================
 img_transform = transforms.Compose([
@@ -73,50 +66,9 @@ class MyData(Dataset):
 
         logger.info("Getting MyData Data")
 
-        if 'test_theme' in args.data:
-            logger.info("Getting Theme-related Clipart Data")
-            theme_names = args.test_theme.split(',')
-            logger.info("Getting themes %s" % ", ".join(theme_names))
-            for theme_name in theme_names:
-                theme_folder = '/srv/share/purva/Projects/doodle/doodling/crowd-clipart/icon_images_original/' + theme_name
-                # theme_folder = '/srv/share/purva/Projects/doodle/doodling/cliparts/themes/' + theme_name
-                for filename in glob.glob(theme_folder + '/*.png'):
-                    if os.stat(filename).st_size == 0:
-                        continue
-                    img = ndimage.imread(filename)[:, :, 3]
-                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                    img = cv2.bitwise_not(img)
-                    res = imresize(img, size=(img_size, img_size))
-                    res = res / 255.0
-                    data.append(res)
-                    weights.append(float(1.0))
-                    identity.append(0)
-                    self.filenames.append(filename)
-                    self.labels.append(letters.index('lowera'))    # dummy label
-
-        if 'themes' in args.data:
-            logger.info("Getting Theme-related Clipart Data")
-            theme_names = ['water']
-            logger.info("Getting themes %s" % ", ".join(theme_names))
-            for theme_name in theme_names:
-                theme_folder = '/srv/share/purva/Projects/doodle/doodling/crowd-clipart/icon_images_original/' + theme_name
-                for filename in glob.glob(theme_folder + '/*.png'):
-                    img = ndimage.imread(filename)[:, :, 3]
-                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                    img = cv2.bitwise_not(img)
-                    res = imresize(img, size=(img_size, img_size))
-                    res = res / 255.0
-                    data.append(res)
-                    weights.append(float(1.0))
-                    identity.append(0)
-                    self.filenames.append(filename)
-                    self.labels.append(letters.index('lowera'))    # dummy label
-
         if 'cliparts' in args.data:
             logger.info("Getting clipart data ...")
-            for i, filename in enumerate(glob.glob('/srv/share/purva/Projects/doodle/doodling/autoencoder_scaled_up/cliparts/*.png')):
+            for i, filename in enumerate(os.path.join(args.cliparts_dir, '*.png')):
                 if i > args.datalimit:
                     logger.info("Setting a limit of %d for cliparts" % args.datalimit)
                     break
@@ -134,7 +86,7 @@ class MyData(Dataset):
 
         if 'letters' in args.data:
             logger.info("Getting letter data ...")
-            for i, filename in enumerate(glob.glob('/srv/share/purva/Projects/doodle/doodling/autoencoder_scaled_up/training_data/*.png')):
+            for i, filename in enumerate(os.path.join(args.letters_dir, '*.png')):
                 if i > args.datalimit:
                     logger.info("Setting a limit of %d for letters" % args.datalimit)
                     break
@@ -142,41 +94,8 @@ class MyData(Dataset):
                 res = imresize(img, size=(img_size, img_size))  # numpy array of dimensions (s,s,3)
                 res = res / 255.0
                 data.append(res)
-                match = re.match(r"([a-z]+)([0-9]+)", filename.split('/')[9].split('.')[0], re.I)
-                self.labels.append(letters.index(match.groups()[0]))
-                identity.append(2)
-                self.filenames.append(filename)
-                weights.append(float(args.alpha))
-
-        if 'test_letters' in args.data:
-            logger.info("Getting letter data ...")
-            for i, filename in enumerate(glob.glob('/srv/share/purva/Projects/doodle/doodling/autoencoder_scaled_up/testing_data/*.png')):
-                if i > args.datalimit:
-                    logger.info("Setting a limit of %d for letters" % args.datalimit)
-                    break
-                img = ndimage.imread(filename)[:, :, :3]
-                res = imresize(img, size=(img_size, img_size))  # numpy array of dimensions (s,s,3)
-                res = res / 255.0
-                data.append(res)
-                match = re.match(r"([a-z]+)([0-9]+)", filename.split('/')[9].split('.')[0], re.I)
-                self.labels.append(letters.index(match.groups()[0]))
-                identity.append(2)
-                self.filenames.append(filename)
-                weights.append(float(args.alpha))
-                
-        # PURVA -- DELETE LATER
-        if 'test_letters1' in args.data:
-            logger.info("Getting letter data ...")
-            for i, filename in enumerate(glob.glob('/srv/share/purva/Projects/doodle/doodling/autoencoder_scaled_up/testing_data1/*.png')):
-                if i > args.datalimit:
-                    logger.info("Setting a limit of %d for letters" % args.datalimit)
-                    break
-                img = ndimage.imread(filename)[:, :, :3]
-                res = imresize(img, size=(img_size, img_size))  # numpy array of dimensions (s,s,3)
-                res = res / 255.0
-                data.append(res)
-                match = re.match(r"([a-z]+)([0-9]+)", filename.split('/')[9].split('.')[0], re.I)
-                self.labels.append(letters.index(match.groups()[0]))
+                label = ''.join([i for i in filename.split('/')[-1].split('.png')[0] if not i.isdigit()])
+                self.labels.append(letters.index(label))
                 identity.append(2)
                 self.filenames.append(filename)
                 weights.append(float(args.alpha))
@@ -205,9 +124,9 @@ class MyData(Dataset):
 
 # ===================Model Classes=====================
 
-
-# Bottleneck function for ResNet-based encoder
 class Bottleneck(nn.Module):
+    """Bottleneck function for ResNet-based encoder."""
+
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
@@ -248,6 +167,8 @@ class Bottleneck(nn.Module):
 
 
 class ResnetEncoder(nn.Module):
+    """ResNet-based Encoder."""
+
     def __init__(self, block, layers, args, num_classes=23):
         self.args = args
         self.inplanes = 64
@@ -309,8 +230,9 @@ class ResnetEncoder(nn.Module):
         return x
 
 
-# AlexNet-based Encoder
 class AlexnetEncoder(nn.Module):
+    """AlexNet-based Encoder."""
+
     def __init__(self, args):
         super(AlexnetEncoder, self).__init__()
         self.args = args
@@ -351,8 +273,9 @@ class AlexnetEncoder(nn.Module):
         return x
 
 
-# ResNet-based Decoder
 class Decoder(nn.Module):
+    """ResNet-based Decoder."""
+
     def __init__(self, args):
         super(Decoder, self).__init__()
         self.dfc3 = nn.Linear(args.zsize, 4096)
@@ -409,6 +332,8 @@ class Decoder(nn.Module):
 
 
 class MultiTask(nn.Module):
+    """Main multitask module."""
+
     def __init__(self, args):
         super(MultiTask, self).__init__()
         self.args = args

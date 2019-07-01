@@ -1,10 +1,21 @@
+r"""Train model for TReAT.
+
+Sample usage- (from outer directory)
+
+python treat/train.py \
+--alpha 0.25 \
+--data cliparts,letters \
+--cliparts_dir CLIPARTS_DIR \
+--letters_dir LETTERS_DIR \
+--model alexnet
+
+"""
 from arguments import parser
 
 import torch
 import numpy as np
 import pickle
 import os
-import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from models import MyData
