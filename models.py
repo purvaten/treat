@@ -6,9 +6,13 @@ from torch import nn
 from torchvision import transforms
 from torch.utils.data import Dataset
 import scipy.ndimage as ndimage
-from scipy.misc import imresize
+# from scipy.misc import imresize
+from PIL import Image
+
 import torch.nn.functional as F
 from string import ascii_lowercase
+
+
 
 import glob
 import math
@@ -76,7 +80,9 @@ class MyData(Dataset):
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
                 img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
                 img = cv2.bitwise_not(img)
-                res = imresize(img, size=(img_size, img_size))
+                # res = imresize(img, size=(img_size, img_size))
+                res = np.array(Image.fromarray(img).resize((img_size, img_size), resample=2))
+
                 res = res / 255.0
                 data.append(res)
                 weights.append(1)
@@ -91,7 +97,9 @@ class MyData(Dataset):
                     logger.info("Setting a limit of %d for letters" % args.datalimit)
                     break
                 img = ndimage.imread(filename)[:, :, :3]
-                res = imresize(img, size=(img_size, img_size))  # numpy array of dimensions (s,s,3)
+                # res = imresize(img, size=(img_size, img_size))  # numpy array of dimensions (s,s,3)
+                res = np.array(Image.fromarray(img).resize((img_size, img_size), resample=2))
+
                 res = res / 255.0
                 data.append(res)
                 label = ''.join([i for i in filename.split('/')[-1].split('.png')[0] if not i.isdigit()])
