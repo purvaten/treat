@@ -34,8 +34,8 @@ args = parser.parse_args()
 args.data = args.data.split(',')
 args.data.sort()
 
-with open('args/%s_model_%s_alpha_%.2f_datalimit_%d.pickle' % (args.id, args.model, args.alpha, args.datalimit), 'wb') as f:
-    pickle.dump(args, f)
+# with open('args/%s_model_%s_alpha_%.2f_datalimit_%d.pickle' % (args.id, args.model, args.alpha, args.datalimit), 'wb') as f:
+#     pickle.dump(args, f)
 
 logger.info(args)
 
